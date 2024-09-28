@@ -13,7 +13,7 @@ Muzi is a collaborative music streaming platform that allows users to create, ma
 
 ## Tech Stack
 
-- **Backend**: Node.js with [NestJS](https://nestjs.com/)
+- **Backend**: Node.js
 - **Database**: PostgreSQL
 - **ORM**: Prisma ORM for database interactions
 - **Authentication**: Google OAuth2.0 (OIDC) with options for passwordless login via OTP
