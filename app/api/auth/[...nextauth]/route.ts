@@ -13,20 +13,37 @@ const handler = NextAuth({
     callbacks: {
         async signIn(params) {
             console.log(params);
-            if(!params.user.email){
+            if (!params.user.email) {
                 return false; 
             }
             try {
-                await prismaClient.user.create({
-                    data: {
-                        email: params.user.email??"",
-                        provider:"Google",
-                    },
+                const existingUser = await prismaClient.user.findUnique({
+                    where: { email: params.user.email }
                 });
+
+                if (existingUser) {
+                  
+                    await prismaClient.user.update({
+                        where: { email: params.user.email },
+                        data: {
+                            email: params.user.email ?? "",
+                            provider: "Google",
+                        },
+                    });
+                } else {
+                  
+                    await prismaClient.user.create({
+                        data: {
+                            email: params.user.email ?? "",
+                            provider: "Google",
+                        },
+                    });
+                }
+                
                 return true;
             } catch (error) {
-                console.error("Error creating user:", error);
-                return false; // Prevent sign-in
+                console.error("Error during sign-in:", error);
+                return false; 
             }
         },
     },
