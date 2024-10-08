@@ -27,7 +27,10 @@ export default function Component() {
   const [currentVideo, setCurrentVideo] = useState("dQw4w9WgXcQ")
   
   async function refreshStreams(){
-    const res =await axios.get(`/api/streams/my`);
+    const res = await fetch(`/api/streams/my`,{
+      credentials:"include",
+      // withCredentials:true,
+    });
     console.log(res);
   }
 
