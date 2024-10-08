@@ -9,20 +9,26 @@ import Image from "next/image"
 import axios from "axios"
 
 interface Video {
-  id: string
-  title: string
-  thumbnail: string
-  upvotes: number
-  downvotes: number
+  id: string;
+  type?: string;
+  url?: string;
+  extractedId?: string;
+  title?: string;
+  smallImg?: string;
+  bigImg?: string;
+  active?: boolean;
+  userId?: string;
+  upvotes?: number;
+  haveUpvoted?: boolean; 
 }
 
 export default function Component() {
   const [inputLink, setInputLink] = useState("")
   const [previewId, setPreviewId] = useState("")
   const [queue, setQueue] = useState<Video[]>([
-    { id: "dQw4w9WgXcQ", title: "Rick Astley - Never Gonna Give You Up", thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", upvotes: 5, downvotes: 1 },
-    { id: "9bZkp7q19f0", title: "PSY - GANGNAM STYLE", thumbnail: "https://img.youtube.com/vi/9bZkp7q19f0/0.jpg", upvotes: 3, downvotes: 0 },
-    { id: "kJQP7kiw5Fk", title: "Luis Fonsi - Despacito ft. Daddy Yankee", thumbnail: "https://img.youtube.com/vi/kJQP7kiw5Fk/0.jpg", upvotes: 2, downvotes: 1 },
+    { id: "dQw4w9WgXcQ", title: "Rick Astley - Never Gonna Give You Up",bigImg: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", upvotes: 5},
+    { id: "9bZkp7q19f0", title: "PSY - GANGNAM STYLE",bigImg: "https://img.youtube.com/vi/9bZkp7q19f0/0.jpg", upvotes: 3 },
+    { id: "kJQP7kiw5Fk", title: "Luis Fonsi - Despacito ft. Daddy Yankee",bigImg: "https://img.youtube.com/vi/kJQP7kiw5Fk/0.jpg", upvotes: 2},
   ])
   const [currentVideo, setCurrentVideo] = useState("dQw4w9WgXcQ")
   
@@ -62,9 +68,9 @@ export default function Component() {
         setQueue([...queue, { 
           id: previewId, 
           title: data.title, 
-          thumbnail: `https://img.youtube.com/vi/${previewId}/0.jpg`,
+         bigImg: `https://img.youtube.com/vi/${previewId}/0.jpg`,
           upvotes: 0,
-          downvotes: 0
+          
         }])
         setInputLink("")
         setPreviewId("")
@@ -74,18 +80,24 @@ export default function Component() {
     }
   }
 
-  const handleVote = (id: string, voteType: 'upvote' | 'downvote') => {
+  const handleVote = (id: string, isUpvote:boolean) => {
     setQueue(
       queue.map((video) =>
         video.id === id
           ? {
               ...video,
-              upvotes: voteType === 'upvote' ? video.upvotes + 1 : video.upvotes,
-              downvotes: voteType === 'downvote' ? video.downvotes + 1 : video.downvotes,
+              upvotes: isUpvote? video.upvotes+1:video.upvotes,
+              // downvotes: voteType === 'downvote' ? video.downvotes + 1 : video.downvotes,
             }
           : video
-      ).sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes))
-    )
+      ).sort((a, b) => (b.upvotes - a.upvotes)))
+      fetch(`api/streams/${isUpvote ? "upvote": "downvote"}`,{
+        method: "POST",
+        body: JSON.stringify({
+
+          streamId:id
+      })
+    })
   }
 
   const handleShare = () => {
@@ -207,7 +219,7 @@ export default function Component() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleVote(video.id, 'upvote')}
+                        onClick={() => handleVote(video.id, true)}
                         className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white transition-colors duration-300"
                       >
                         <ThumbsUp className="w-4 h-4 mr-1" />
@@ -216,11 +228,11 @@ export default function Component() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleVote(video.id, 'downvote')}
+                        onClick={() => handleVote(video.id, false)}
                         className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors duration-300"
                       >
-                        <ThumbsDown className="w-4 h-4 mr-1" />
-                        {video.downvotes}
+                        {/* <ThumbsDown className="w-4 h-4 mr-1" />
+                        {video.downvotes} */}
                       </Button>
                     </div>
                   </CardContent>
