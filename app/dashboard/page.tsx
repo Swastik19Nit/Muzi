@@ -5,47 +5,47 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ThumbsUp, ThumbsDown, Music, Share2, SkipForward } from "lucide-react"
-import Image from "next/image"
-import axios from "axios"
+import LiteYouTubeEmbed from "react-lite-youtube-embed"
+import { randomUUID } from "crypto"
 
 interface Video {
   id: string;
   type?: string;
   url?: string;
   extractedId?: string;
-  title?: string;
+  title: string;
   smallImg?: string;
-  bigImg?: string;
+  bigImg: string;
   active?: boolean;
   userId?: string;
-  upvotes?: number;
-  haveUpvoted?: boolean; 
+  upvotes: number;
+  haveUpvoted: boolean;
 }
 
 export default function Component() {
   const [inputLink, setInputLink] = useState("")
   const [previewId, setPreviewId] = useState("")
-  const [queue, setQueue] = useState<Video[]>([
-    { id: "dQw4w9WgXcQ", title: "Rick Astley - Never Gonna Give You Up",bigImg: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", upvotes: 5},
-    { id: "9bZkp7q19f0", title: "PSY - GANGNAM STYLE",bigImg: "https://img.youtube.com/vi/9bZkp7q19f0/0.jpg", upvotes: 3 },
-    { id: "kJQP7kiw5Fk", title: "Luis Fonsi - Despacito ft. Daddy Yankee",bigImg: "https://img.youtube.com/vi/kJQP7kiw5Fk/0.jpg", upvotes: 2},
-  ])
-  const [currentVideo, setCurrentVideo] = useState("dQw4w9WgXcQ")
   
-  async function refreshStreams(){
-    const res = await fetch(`/api/streams/my`,{
-      credentials:"include",
-      // withCredentials:true,
+  const [queue, setQueue] = useState<Video[]>([  ])
+  const [currentVideo, setCurrentVideo] = useState("dQw4w9WgXcQ")
+
+  async function refreshStreams() {
+    const res = await fetch(`/api/streams/my`, {
+      credentials: "include",
     });
-    console.log(res);
+    const data = await res.json();
+    setQueue(data.streams);
   }
+  const YT_REGEX = new RegExp("^(?:(?:https?:)?\\/\\/)?(?:www\\.)?(?:m\\.)?(?:youtu(?:be)?\\.com\\/(?:v\\/|embed\\/|watch(?:\\/|\\?v=))|youtu\\.be\\/)((?:\\w|-){11})(?:\\S+)?$")
 
-  useEffect(()=>{
+  useEffect(() => {
     refreshStreams();
-    const interval = setInterval(()=>{
+    const interval = setInterval(() => {
+      refreshStreams();
+    }, 10 * 1000)
+    return () => clearInterval(interval);
+  }, [])
 
-    },10*1000)
-  })
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputLink(e.target.value)
     const videoId = extractVideoId(e.target.value)
@@ -60,44 +60,42 @@ export default function Component() {
     return match && match[2].length === 11 ? match[2] : null
   }
 
-  const handleSubmit = async () => {
-    if (previewId) {
-      try {
-        const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${previewId}`)
-        const data = await response.json()
-        setQueue([...queue, { 
-          id: previewId, 
-          title: data.title, 
-         bigImg: `https://img.youtube.com/vi/${previewId}/0.jpg`,
-          upvotes: 0,
-          
-        }])
-        setInputLink("")
-        setPreviewId("")
-      } catch (error) {
-        console.error("Error fetching video info:", error)
-      }
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch("/api/streams/",{
+      method:"POST",
+      body: JSON.stringify({
+        creatorId:"6c81be2e-23ec-4d1d-ab12-2f42ff077b44",
+        url: inputLink,
+      })
+    })
+    setQueue([...queue, await res.json()])
+    setInputLink("")
   }
 
-  const handleVote = (id: string, isUpvote:boolean) => {
+  const handleVote = (id: string, isUpvote: boolean) => {
     setQueue(
       queue.map((video) =>
         video.id === id
           ? {
-              ...video,
-              upvotes: isUpvote? video.upvotes+1:video.upvotes,
-              // downvotes: voteType === 'downvote' ? video.downvotes + 1 : video.downvotes,
-            }
+            ...video,
+            upvotes: isUpvote ? video.upvotes + 1: video.upvotes-1,
+            haveUpvoted: !video.haveUpvoted,
+          }
           : video
-      ).sort((a, b) => (b.upvotes - a.upvotes)))
-      fetch(`api/streams/${isUpvote ? "upvote": "downvote"}`,{
-        method: "POST",
-        body: JSON.stringify({
-
-          streamId:id
+      ).sort((a, b) => (b.upvotes - a.upvotes))
+    )
+    fetch(`/api/streams/${isUpvote ? "upvote" : "downvote"}`, {
+      method: "POST",
+      body: JSON.stringify({
+        streamId: id
       })
     })
+    setTimeout(() => {
+      refreshStreams();
+    }, 2000);
+    
+    // console.log(res);
   }
 
   const handleShare = () => {
@@ -108,9 +106,8 @@ export default function Component() {
       }).then(() => {
         console.log('Thanks for sharing!');
       })
-      .catch(console.error);
+        .catch(console.error);
     } else {
-      // Fallback for browsers that don't support navigator.share
       alert("Copy this link to share: " + window.location.href);
     }
   }
@@ -186,16 +183,19 @@ export default function Component() {
                 </Button>
               </div>
             </div>
-            {previewId && (
+            {inputLink && inputLink.match(YT_REGEX) && (
               <div className="aspect-video rounded-lg overflow-hidden shadow-lg shadow-purple-500/20">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={`https://www.youtube.com/embed/${previewId}`}
-                  title="YouTube video player"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+                <img
+                  src={`https://img.youtube.com/vi/${inputLink.split("?v=")[1]}/0.jpg`}
+                  alt="Video thumbnail"
+                  className="w-full h-full object-cover cursor-pointer"
+                  onClick={() => {
+                    setPreviewId(inputLink.split("?v=")[1])
+                  }}
+                />
+                {previewId && (
+                  <LiteYouTubeEmbed title="" id={previewId} />
+                )}
               </div>
             )}
           </div>
@@ -206,8 +206,8 @@ export default function Component() {
                 <Card key={video.id} className="bg-gray-800 border-purple-500 border-2 rounded-lg overflow-hidden transform transition-all duration-300 ease-in-out hover:scale-102 hover:shadow-lg hover:shadow-purple-500/30">
                   <CardContent className="flex items-center justify-between p-4">
                     <div className="flex items-center space-x-4">
-                      <Image
-                        src={video.thumbnail}
+                      <img
+                        src={video.bigImg}
                         alt={video.title}
                         width={80}
                         height={60}
@@ -219,20 +219,11 @@ export default function Component() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleVote(video.id, true)}
-                        className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white transition-colors duration-300"
+                        onClick={() => handleVote(video.id, video.haveUpvoted?false:true)}
+                        className={`border-green-500 text-green-500 hover:bg-green-500 hover:text-white transition-colors duration-300 ${video.haveUpvoted ? 'bg-green-500 text-white' : ''}`}
                       >
-                        <ThumbsUp className="w-4 h-4 mr-1" />
+                        {video.haveUpvoted ? <ThumbsDown className="w-4 h-4 mr-1" /> : <ThumbsUp className="w-4 h-4 mr-1" />}
                         {video.upvotes}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleVote(video.id, false)}
-                        className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors duration-300"
-                      >
-                        {/* <ThumbsDown className="w-4 h-4 mr-1" />
-                        {video.downvotes} */}
                       </Button>
                     </div>
                   </CardContent>

@@ -43,14 +43,13 @@ export async function POST(req: NextRequest) {
                 smallImg: (thumbnails.length > 1 ? thumbnails[thumbnails.length - 2].url : thumbnails[thumbnails.length - 1].url) ?? "",
                 bigImg: thumbnails[thumbnails.length - 1].url ?? ""
 
-
-
             }
 
         });
         return NextResponse.json({
-            message: "Added Stream",
-            id: stream.id,
+            ...stream,
+            hasUpvoted:false,
+            upvotes:0
         })
     }
     catch (e) {

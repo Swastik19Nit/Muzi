@@ -11,26 +11,37 @@ const UpvoteSchema = z.object({
 export async function POST(req: NextRequest) {
     
     const session = await getServerSession();
-    if (!session?.user?.email) {
+    // if (!session?.user?.email) {
+    //     return NextResponse.json(
+    //         { message: "Unauthenticated" },
+    //         { status: 403 }
+    //     );
+    // }
+    const user = await prismaClient.user.findFirst({
+        where: {
+            email: session?.user?.email ??"",
+        }
+    });
+    if (!user) {
         return NextResponse.json(
-            { message: "Unauthenticated" },
-            { status: 403 }
+            { message: "User not found" },
+            { status: 404 }
         );
     }
 
     try {
         const data = UpvoteSchema.parse(await req.json());
-        const user = await prismaClient.user.findFirst({
-            where: {
-                email: session.user.email
-            }
-        });
-        if (!user) {
-            return NextResponse.json(
-                { message: "User not found" },
-                { status: 404 }
-            );
-        }
+
+        // const stream = await prismaClient.stream.findUnique({
+        //     where: { id: data.streamId }
+        // });
+        // if(!stream) {
+        //     return NextResponse.json(
+        //         { message: "Stream not found" },
+        //         { status: 404 }
+        //     );
+        // }
+        
         await prismaClient.upvote.create({
             data: {
                 userId: user.id,
