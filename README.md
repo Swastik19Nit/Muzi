@@ -2,6 +2,8 @@
 
 Muzi is a collaborative music streaming platform that allows users to create, manage, and participate in streaming sessions. It aims to enhance the music experience in group environments and live streams by enabling real-time song choices and interactions. The platform ensures each user can manage multiple streams but only have one active stream at a time.
 
+![image](https://github.com/user-attachments/assets/5d1433e4-e40e-42ce-9f9e-5645604622b4)
+
 ## Features
 
 - **Collaborative Music Selection**: Users can collaborate to choose songs for live streams or group sessions.
