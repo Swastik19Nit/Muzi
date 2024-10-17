@@ -6,7 +6,8 @@
   import { Card, CardContent } from "@/components/ui/card"
   import { ThumbsUp, ThumbsDown, Music, Share2, SkipForward } from "lucide-react"
   import LiteYouTubeEmbed from "react-lite-youtube-embed"
-
+  import { toast, ToastContainer } from 'react-toastify';
+  import 'react-toastify/dist/ReactToastify.css';
 
   interface Video {
     id: string;
@@ -21,6 +22,8 @@
     upvotes: number;
     haveUpvoted: boolean;
   }
+
+  const creatorId = "6c81be2e-23ec-4d1d-ab12-2f42ff077b44"
 
   export default function Component() {
     const [inputLink, setInputLink] = useState("")
@@ -67,7 +70,7 @@
       const res = await fetch("/api/streams/",{
         method:"POST",
         body: JSON.stringify({
-          creatorId:"6c81be2e-23ec-4d1d-ab12-2f42ff077b44",
+          creatorId,
           url: inputLink,
         })
       })
@@ -101,18 +104,32 @@
     }
 
     const handleShare = () => {
-      if (navigator.share) {
-        navigator.share({
-          title: 'Check out this music queue!',
-          url: window.location.href
-        }).then(() => {
-          console.log('Thanks for sharing!');
-        })
-          .catch(console.error);
-      } else {
-        alert("Copy this link to share: " + window.location.href);
-      }
-    }
+      const shareableLink = `${window.location.hostname}/creator/${creatorId}`;
+      navigator.clipboard.writeText(shareableLink).then(() => {
+          toast.success('Link copied to clipboard!', {
+              position: "top-right",
+              autoClose: 3000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+          });
+      }).catch((err) => {
+          
+          console.error('Could not copy text: ', err);
+          toast.error('Failed to copy link. Please try again.', {
+              position: "top-right",
+              autoClose: 3000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+          });
+      });
+  };
+  
 
     const handlePlayNext = () => {
       if (queue.length > 0) {
@@ -235,6 +252,7 @@
             </div>
           </div>
         </main>
+        <ToastContainer />
       </div>
     )
   }
