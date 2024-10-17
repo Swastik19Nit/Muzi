@@ -11,6 +11,7 @@ const UpvoteSchema = z.object({
 export async function POST(req: NextRequest) {
     
     const session = await getServerSession();
+    //can be used later
     // if (!session?.user?.email) {
     //     return NextResponse.json(
     //         { message: "Unauthenticated" },
